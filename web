@@ -1,0 +1,1262 @@
+import { useState, useEffect, useRef } from "react";
+
+const COLORS = {
+  ivory: "#FAF8F4",
+  warmWhite: "#FDFCF9",
+  beige: "#F0EBE3",
+  beigeDeep: "#E5DDD3",
+  charcoal: "#1A1A1A",
+  graphite: "#2E2E2E",
+  muted: "#6B6560",
+  gold: "#B8965A",
+  goldLight: "#D4AF7A",
+  accent: "#8C7355",
+  cta: "#1A1A1A",
+  ctaHover: "#2E2E2E",
+};
+
+const style = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ivory: #FAF8F4;
+    --warm-white: #FDFCF9;
+    --beige: #F0EBE3;
+    --beige-deep: #E5DDD3;
+    --charcoal: #1A1A1A;
+    --graphite: #2E2E2E;
+    --muted: #6B6560;
+    --gold: #B8965A;
+    --gold-light: #D4AF7A;
+    --accent: #8C7355;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--warm-white);
+    color: var(--charcoal);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .display { font-family: 'Playfair Display', serif; }
+
+  /* NAV */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 0 48px;
+    height: 72px;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.4s, backdrop-filter 0.4s;
+  }
+  .nav.scrolled {
+    background: rgba(253,252,249,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(184,150,90,0.15);
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--charcoal);
+    text-decoration: none;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo span {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gold);
+    display: inline-block;
+  }
+  .nav-links {
+    display: flex; gap: 36px; list-style: none;
+  }
+  .nav-links a {
+    font-size: 13px; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--graphite);
+    text-decoration: none; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-cta {
+    background: var(--charcoal); color: #fff;
+    padding: 11px 24px; font-size: 13px; font-weight: 500;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    border: none; cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    text-decoration: none;
+  }
+  .nav-cta:hover { background: var(--gold); transform: translateY(-1px); }
+  .lang-switcher {
+    display: flex; gap: 6px; font-size: 12px; font-weight: 500;
+    letter-spacing: 0.08em; color: var(--muted);
+  }
+  .lang-switcher span { cursor: pointer; transition: color 0.2s; }
+  .lang-switcher span:hover, .lang-switcher span.active { color: var(--gold); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: grid; grid-template-columns: 1fr 1fr;
+    position: relative; overflow: hidden;
+  }
+  .hero-left {
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 140px 80px 80px 80px;
+    background: var(--warm-white); position: relative; z-index: 2;
+  }
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--gold);
+    display: flex; align-items: center; gap: 12px; margin-bottom: 32px;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 40px; height: 1px; background: var(--gold);
+  }
+  .hero-h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(44px, 5.5vw, 72px);
+    font-weight: 500; line-height: 1.08;
+    color: var(--charcoal); margin-bottom: 28px;
+    letter-spacing: -0.01em;
+  }
+  .hero-h1 em {
+    font-style: italic; color: var(--gold);
+  }
+  .hero-sub {
+    font-size: 17px; font-weight: 300; line-height: 1.65;
+    color: var(--muted); max-width: 420px; margin-bottom: 48px;
+  }
+  .hero-ctas { display: flex; gap: 16px; align-items: center; }
+  .btn-primary {
+    background: var(--charcoal); color: #fff;
+    padding: 16px 36px; font-size: 14px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    border: none; cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-primary:hover {
+    background: var(--gold); transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(184,150,90,0.3);
+  }
+  .btn-ghost {
+    background: transparent; color: var(--charcoal);
+    padding: 15px 32px; font-size: 14px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    border: 1px solid var(--beigeDeep); cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+  .hero-stats {
+    display: flex; gap: 40px; margin-top: 64px;
+    padding-top: 40px; border-top: 1px solid var(--beige);
+  }
+  .hero-stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px; font-weight: 500; color: var(--charcoal);
+  }
+  .hero-stat-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); margin-top: 4px;
+  }
+  .hero-right {
+    position: relative; overflow: hidden;
+  }
+  .hero-right img {
+    width: 100%; height: 100%; object-fit: cover;
+    object-position: center top;
+    transition: transform 8s ease;
+  }
+  .hero-right:hover img { transform: scale(1.03); }
+  .hero-right-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(26,26,26,0.08) 0%, transparent 60%);
+  }
+  .hero-badge {
+    position: absolute; bottom: 48px; left: 48px;
+    background: rgba(253,252,249,0.95); backdrop-filter: blur(12px);
+    padding: 20px 28px; border-left: 3px solid var(--gold);
+  }
+  .hero-badge-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 6px;
+  }
+  .hero-badge-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; color: var(--charcoal);
+  }
+
+  /* TRUST BAR */
+  .trust-bar {
+    background: var(--charcoal);
+    padding: 28px 80px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .trust-item {
+    display: flex; align-items: center; gap: 14px;
+    color: rgba(255,255,255,0.7);
+  }
+  .trust-item-icon {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(184,150,90,0.4);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold); font-size: 16px; flex-shrink: 0;
+  }
+  .trust-item-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 500; color: #fff;
+    line-height: 1;
+  }
+  .trust-item-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: rgba(255,255,255,0.5);
+    margin-top: 3px;
+  }
+  .trust-divider {
+    width: 1px; height: 44px;
+    background: rgba(255,255,255,0.12);
+  }
+
+  /* SECTION LAYOUT */
+  .section { padding: 120px 80px; }
+  .section-sm { padding: 80px 80px; }
+  .section-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--gold);
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  }
+  .section-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--gold); }
+  .section-h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 500; line-height: 1.12;
+    color: var(--charcoal); letter-spacing: -0.01em;
+  }
+  .section-sub {
+    font-size: 16px; font-weight: 300; line-height: 1.7;
+    color: var(--muted); max-width: 500px; margin-top: 16px;
+  }
+
+  /* WHY US */
+  .why-us { background: var(--ivory); }
+  .why-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 80px; align-items: center; margin-top: 64px;
+  }
+  .why-image-wrap {
+    position: relative;
+  }
+  .why-image-wrap img {
+    width: 100%; aspect-ratio: 4/5; object-fit: cover;
+  }
+  .why-image-accent {
+    position: absolute; bottom: -24px; right: -24px;
+    width: 160px; height: 160px; background: var(--gold);
+    opacity: 0.12;
+  }
+  .why-items { display: flex; flex-direction: column; gap: 36px; }
+  .why-item { display: flex; gap: 24px; align-items: flex-start; }
+  .why-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px; font-weight: 400;
+    color: var(--beigeDeep); line-height: 1; flex-shrink: 0; width: 48px;
+  }
+  .why-item-title {
+    font-size: 17px; font-weight: 600; color: var(--charcoal);
+    margin-bottom: 8px; letter-spacing: -0.01em;
+  }
+  .why-item-text {
+    font-size: 14px; font-weight: 300; line-height: 1.7; color: var(--muted);
+  }
+
+  /* SERVICES */
+  .services { background: var(--warm-white); }
+  .services-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 56px;
+  }
+  .services-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+  }
+  .service-card {
+    background: var(--beige); padding: 40px 36px;
+    position: relative; overflow: hidden;
+    cursor: pointer; transition: background 0.3s;
+    group: true;
+  }
+  .service-card:hover { background: var(--charcoal); }
+  .service-card:hover .service-title,
+  .service-card:hover .service-text,
+  .service-card:hover .service-num { color: rgba(255,255,255,0.9); }
+  .service-card:hover .service-arrow { color: var(--gold); opacity: 1; }
+  .service-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px; color: var(--gold);
+    letter-spacing: 0.08em; margin-bottom: 28px; transition: color 0.3s;
+  }
+  .service-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 500; color: var(--charcoal);
+    line-height: 1.2; margin-bottom: 14px; transition: color 0.3s;
+  }
+  .service-text {
+    font-size: 13px; font-weight: 300; line-height: 1.7;
+    color: var(--muted); transition: color 0.3s;
+  }
+  .service-arrow {
+    position: absolute; bottom: 32px; right: 32px;
+    font-size: 20px; color: var(--gold); opacity: 0.4;
+    transition: opacity 0.3s, transform 0.3s, color 0.3s;
+  }
+  .service-card:hover .service-arrow { transform: translate(4px, -4px); }
+
+  /* BEFORE/AFTER */
+  .ba-section { background: var(--charcoal); padding: 120px 80px; }
+  .ba-section .section-eyebrow { color: var(--gold); }
+  .ba-section .section-eyebrow::before { background: var(--gold); }
+  .ba-section .section-h2 { color: #fff; }
+  .ba-section .section-sub { color: rgba(255,255,255,0.5); }
+  .ba-cards {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+    margin-top: 56px;
+  }
+  .ba-card {
+    position: relative; overflow: hidden;
+    aspect-ratio: 3/4; background: #2a2a2a;
+    cursor: pointer;
+  }
+  .ba-card img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; transition: opacity 0.3s, transform 0.5s; }
+  .ba-card:hover img { opacity: 1; transform: scale(1.03); }
+  .ba-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(26,26,26,0.9) 0%, transparent 50%);
+    padding: 32px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .ba-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--gold);
+    background: rgba(184,150,90,0.15); border: 1px solid rgba(184,150,90,0.3);
+    padding: 4px 10px; display: inline-block; margin-bottom: 12px; width: fit-content;
+  }
+  .ba-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; color: #fff; font-weight: 500; line-height: 1.2;
+  }
+  .ba-slider-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 6px;
+  }
+
+  /* TEAM */
+  .team { background: var(--ivory); }
+  .team-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px;
+    margin-top: 56px;
+  }
+  .doctor-card { position: relative; }
+  .doctor-img-wrap {
+    position: relative; overflow: hidden; margin-bottom: 24px;
+    aspect-ratio: 3/4;
+  }
+  .doctor-img-wrap img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.6s ease;
+    filter: grayscale(20%);
+  }
+  .doctor-card:hover .doctor-img-wrap img { transform: scale(1.04); filter: grayscale(0%); }
+  .doctor-gold-accent {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+    background: var(--gold);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  .doctor-card:hover .doctor-gold-accent { transform: scaleX(1); }
+  .doctor-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 500; color: var(--charcoal);
+    margin-bottom: 6px;
+  }
+  .doctor-role {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--gold);
+  }
+  .doctor-bio {
+    font-size: 13px; font-weight: 300; line-height: 1.7;
+    color: var(--muted); margin-top: 12px;
+  }
+
+  /* TESTIMONIALS */
+  .testimonials { background: var(--warm-white); }
+  .testimonials-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px;
+    margin-top: 56px;
+  }
+  .testimonial-card {
+    background: var(--ivory); padding: 40px;
+    border: 1px solid var(--beige);
+    position: relative;
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  }
+  .testimonial-card:hover {
+    border-color: var(--gold); transform: translateY(-4px);
+    box-shadow: 0 16px 48px rgba(184,150,90,0.08);
+  }
+  .testimonial-quote-icon {
+    font-family: 'Playfair Display', serif;
+    font-size: 80px; line-height: 0.6;
+    color: var(--gold); opacity: 0.2;
+    position: absolute; top: 28px; right: 32px;
+  }
+  .testimonial-stars {
+    color: var(--gold); font-size: 14px; letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+  .testimonial-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; font-weight: 400; font-style: italic;
+    line-height: 1.7; color: var(--graphite); margin-bottom: 28px;
+  }
+  .testimonial-author {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .author-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--gold); display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+  .author-name {
+    font-size: 14px; font-weight: 600; color: var(--charcoal);
+  }
+  .author-since {
+    font-size: 11px; font-weight: 400; color: var(--muted);
+    margin-top: 2px; letter-spacing: 0.05em;
+  }
+
+  /* JOURNEY */
+  .journey { background: var(--beige); }
+  .journey-steps {
+    display: flex; gap: 0; margin-top: 64px; position: relative;
+  }
+  .journey-steps::before {
+    content: '';
+    position: absolute; top: 32px; left: 80px; right: 80px; height: 1px;
+    background: var(--gold); opacity: 0.3;
+    z-index: 0;
+  }
+  .journey-step {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    text-align: center; padding: 0 20px; position: relative; z-index: 1;
+  }
+  .step-circle {
+    width: 64px; height: 64px;
+    background: var(--ivory); border: 2px solid var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 500; color: var(--gold);
+    margin-bottom: 24px; flex-shrink: 0;
+  }
+  .step-title {
+    font-size: 15px; font-weight: 600; color: var(--charcoal);
+    margin-bottom: 8px; letter-spacing: -0.01em;
+  }
+  .step-text {
+    font-size: 12px; font-weight: 300; line-height: 1.65; color: var(--muted);
+  }
+
+  /* TECHNOLOGY */
+  .technology { background: var(--charcoal); padding: 120px 80px; }
+  .technology .section-eyebrow::before { background: var(--gold); }
+  .technology .section-h2 { color: #fff; }
+  .technology .section-sub { color: rgba(255,255,255,0.5); }
+  .tech-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+    margin-top: 56px;
+  }
+  .tech-item {
+    background: rgba(255,255,255,0.04);
+    padding: 44px 40px;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: background 0.3s, border-color 0.3s;
+    cursor: default;
+  }
+  .tech-item:hover {
+    background: rgba(184,150,90,0.06);
+    border-color: rgba(184,150,90,0.2);
+  }
+  .tech-icon {
+    width: 48px; height: 48px;
+    border: 1px solid rgba(184,150,90,0.3);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold); font-size: 22px; margin-bottom: 24px;
+  }
+  .tech-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 500; color: #fff;
+    margin-bottom: 12px;
+  }
+  .tech-text {
+    font-size: 13px; font-weight: 300; line-height: 1.7;
+    color: rgba(255,255,255,0.45);
+  }
+
+  /* PRICING */
+  .pricing { background: var(--ivory); }
+  .pricing-cards {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    margin-top: 56px;
+  }
+  .pricing-card {
+    background: var(--warm-white); padding: 40px 32px;
+    border: 1px solid var(--beige);
+    position: relative; transition: border-color 0.3s, transform 0.3s;
+  }
+  .pricing-card.featured {
+    background: var(--charcoal); border-color: var(--charcoal);
+    transform: translateY(-8px);
+  }
+  .pricing-card:hover:not(.featured) {
+    border-color: var(--gold); transform: translateY(-4px);
+  }
+  .pricing-badge {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: var(--gold); color: #fff;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 5px 16px;
+  }
+  .pricing-service {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 12px;
+  }
+  .pricing-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; color: var(--charcoal); margin-bottom: 20px;
+  }
+  .pricing-card.featured .pricing-name { color: #fff; }
+  .pricing-card.featured .pricing-from { color: rgba(255,255,255,0.5); }
+  .pricing-card.featured .pricing-price { color: #fff; }
+  .pricing-card.featured .pricing-features li { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.08); }
+  .pricing-from {
+    font-size: 12px; color: var(--muted); margin-bottom: 4px;
+  }
+  .pricing-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; font-weight: 500; color: var(--charcoal);
+    line-height: 1; margin-bottom: 28px;
+  }
+  .pricing-features {
+    list-style: none; margin-bottom: 32px;
+  }
+  .pricing-features li {
+    font-size: 13px; font-weight: 300; color: var(--muted);
+    padding: 10px 0; border-bottom: 1px solid var(--beige);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .pricing-features li::before {
+    content: ''; width: 6px; height: 1px; background: var(--gold); flex-shrink: 0;
+  }
+
+  /* CTA FINAL */
+  .cta-final {
+    background: var(--warm-white); padding: 120px 80px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+  }
+  .cta-final .section-h2 { max-width: 480px; }
+  .contact-form-wrap {
+    background: var(--ivory); padding: 48px;
+    border: 1px solid var(--beige);
+  }
+  .form-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 500; color: var(--charcoal);
+    margin-bottom: 32px;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+    display: block; margin-bottom: 8px;
+  }
+  .form-input {
+    width: 100%; padding: 14px 16px;
+    background: var(--warm-white); border: 1px solid var(--beige);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    color: var(--charcoal); outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--gold); }
+  .form-input::placeholder { color: rgba(107,101,96,0.5); }
+  .form-submit {
+    width: 100%; background: var(--charcoal); color: #fff;
+    padding: 18px; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border: none; cursor: pointer; margin-top: 8px;
+    transition: background 0.2s;
+  }
+  .form-submit:hover { background: var(--gold); }
+  .contact-info { margin-top: 40px; display: flex; flex-direction: column; gap: 20px; }
+  .contact-item {
+    display: flex; gap: 16px; align-items: flex-start;
+  }
+  .contact-icon {
+    width: 40px; height: 40px; flex-shrink: 0;
+    border: 1px solid var(--beige);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold); font-size: 16px;
+  }
+  .contact-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+  }
+  .contact-value {
+    font-size: 15px; font-weight: 500; color: var(--charcoal);
+    text-decoration: none;
+  }
+  .contact-value:hover { color: var(--gold); }
+
+  /* FOOTER */
+  .footer { background: var(--charcoal); padding: 80px 80px 40px; }
+  .footer-top {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 60px;
+    padding-bottom: 60px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 40px;
+  }
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px; font-weight: 500; color: #fff;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .footer-logo span {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--gold);
+  }
+  .footer-tagline {
+    font-size: 13px; font-weight: 300; line-height: 1.7;
+    color: rgba(255,255,255,0.4); max-width: 260px;
+  }
+  .footer-col-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: rgba(255,255,255,0.4);
+    margin-bottom: 20px;
+  }
+  .footer-links { list-style: none; }
+  .footer-links li { margin-bottom: 12px; }
+  .footer-links a {
+    font-size: 13px; font-weight: 300; color: rgba(255,255,255,0.55);
+    text-decoration: none; transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--gold); }
+  .footer-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-copy {
+    font-size: 12px; color: rgba(255,255,255,0.25); letter-spacing: 0.05em;
+  }
+  .footer-socials { display: flex; gap: 12px; }
+  .social-link {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.4); text-decoration: none;
+    font-size: 14px; transition: border-color 0.2s, color 0.2s;
+  }
+  .social-link:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* MOBILE STICKY */
+  .mobile-sticky {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    display: grid; grid-template-columns: 1fr 1fr;
+  }
+  .sticky-btn {
+    padding: 18px; text-align: center;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; cursor: pointer; border: none;
+    text-decoration: none; display: flex; align-items: center;
+    justify-content: center; gap: 8px;
+  }
+  .sticky-call { background: var(--charcoal); color: #fff; }
+  .sticky-book { background: var(--gold); color: #fff; }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-right { height: 50vh; }
+    .hero-left { padding: 120px 40px 60px; }
+    .section { padding: 80px 40px; }
+    .trust-bar { padding: 24px 40px; flex-wrap: wrap; gap: 24px; }
+    .why-grid { grid-template-columns: 1fr; gap: 48px; }
+    .services-grid { grid-template-columns: repeat(2, 1fr); }
+    .ba-cards { grid-template-columns: 1fr 1fr; }
+    .team-grid { grid-template-columns: 1fr 1fr; }
+    .cta-final { grid-template-columns: 1fr; gap: 48px; }
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .journey-steps { flex-wrap: wrap; gap: 32px; }
+    .journey-steps::before { display: none; }
+    .journey-step { flex: 0 0 calc(33.333% - 22px); }
+    .pricing-cards { grid-template-columns: 1fr; gap: 20px; }
+    .pricing-card.featured { transform: none; }
+    .tech-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    .hero-left { padding: 100px 24px 48px; }
+    .hero-stats { gap: 24px; flex-wrap: wrap; }
+    .section { padding: 64px 24px; }
+    .ba-section { padding: 64px 24px; }
+    .technology { padding: 64px 24px; }
+    .trust-bar { display: none; }
+    .services-grid { grid-template-columns: 1fr; }
+    .ba-cards { grid-template-columns: 1fr; }
+    .team-grid { grid-template-columns: 1fr; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .footer { padding: 48px 24px 100px; }
+    .footer-top { grid-template-columns: 1fr; }
+    .cta-final { padding: 64px 24px; }
+    .journey-step { flex: 0 0 100%; }
+    .services-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  }
+
+  /* ANIMATIONS */
+  .fade-in {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+  .fade-in-delay-1 { transition-delay: 0.1s; }
+  .fade-in-delay-2 { transition-delay: 0.2s; }
+  .fade-in-delay-3 { transition-delay: 0.3s; }
+  .fade-in-delay-4 { transition-delay: 0.4s; }
+`;
+
+const services = [
+  { num: "01", title: "Dental Implants", text: "Permanent, natural-looking tooth replacement using premium titanium implants. Restore full function and confidence in your smile." },
+  { num: "02", title: "Porcelain Veneers", text: "Ultra-thin ceramic shells crafted to perfection. Correct chips, gaps, discolouration, and alignment with stunning precision." },
+  { num: "03", title: "Smile Makeover", text: "A bespoke treatment combining multiple procedures to completely transform your smile. Designed around your unique facial aesthetics." },
+  { num: "04", title: "Teeth Whitening", text: "Professional-grade whitening delivering up to 8 shades of transformation in a single appointment." },
+  { num: "05", title: "Orthodontics", text: "Discreet alignment solutions including clear aligners and modern braces for adults and children alike." },
+  { num: "06", title: "Preventive Hygiene", text: "Comprehensive professional cleaning with personalised home care protocols to protect your investment long-term." },
+];
+
+const testimonials = [
+  {
+    text: "An exceptionally refined clinic. I came on recommendation and had no regrets. From the moment I arrived, everything was handled with real care and professionalism. The doctors take time — they don't rush, they explain, they listen.",
+    author: "Amir Shagidullin", initials: "AS", since: "Patient since 2025"
+  },
+  {
+    text: "From the warm welcome to the painless procedure — every detail was considered. The team offered me coffee, the doctor explained everything clearly, and I left with complete peace of mind. A completely different dental experience.",
+    author: "Agneta Rimša", initials: "AR", since: "Patient since 2024"
+  },
+  {
+    text: "Dr. Sofia is extraordinary. The level of care and attention is unlike anything I've experienced at a dental clinic. She is precise, gentle, and genuinely invested in the result. My smile has never looked better.",
+    author: "Veronika Kosenko", initials: "VK", since: "Patient since 2024"
+  },
+  {
+    text: "Outstanding clinic. The team is meticulous, every step is explained in detail, and you feel the difference in quality from the very first visit. I'll be returning — and recommending them to everyone I know.",
+    author: "Nikaels Balašovs", initials: "NB", since: "Patient since 2023"
+  },
+];
+
+const techItems = [
+  { icon: "◈", title: "Digital 3D Scanning", text: "Chairside intraoral scanning creates precision digital impressions in minutes — no traditional moulds, no discomfort." },
+  { icon: "◉", title: "Cone Beam CT Imaging", text: "Three-dimensional diagnostic imaging of teeth, bone, and soft tissue for surgical planning with sub-millimetre accuracy." },
+  { icon: "◫", title: "CAD/CAM Restorations", text: "Computer-designed and milled ceramic restorations — often completed in a single visit with exceptional precision." },
+  { icon: "◯", title: "Pain-Free Anaesthesia", text: "Computer-controlled delivery system for virtually painless injections. Anxiety-free dentistry as a standard." },
+];
+
+const journeySteps = [
+  { num: "I", title: "Initial Consultation", text: "A thorough conversation to understand your concerns, goals, and medical history." },
+  { num: "II", title: "Comprehensive Diagnosis", text: "Digital imaging, examination, and clinical assessment to form a complete picture." },
+  { num: "III", title: "Personalised Plan", text: "A bespoke treatment proposal with transparent pricing and realistic timelines." },
+  { num: "IV", title: "Expert Treatment", text: "Delivered with precision, care, and the most advanced technology available." },
+  { num: "V", title: "Aftercare & Follow-Up", text: "Continued support and monitoring to protect your results for years to come." },
+];
+
+export default function MigdentRedesign() {
+  const [scrolled, setScrolled] = useState(false);
+  const [formData, setFormData] = useState({ name: "", phone: "", email: "", date: "", message: "" });
+  const [submitted, setSubmitted] = useState(false);
+  const observerRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("visible"); }),
+      { threshold: 0.1 }
+    );
+    document.querySelectorAll(".fade-in").forEach(el => observerRef.current.observe(el));
+    return () => observerRef.current?.disconnect();
+  }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSubmitted(true);
+  };
+
+  return (
+    <>
+      <style>{style}</style>
+
+      {/* NAV */}
+      <nav className={`nav ${scrolled ? "scrolled" : ""}`}>
+        <a href="#" className="nav-logo">
+          <span></span>Migdent
+        </a>
+        <ul className="nav-links">
+          <li><a href="#services">Services</a></li>
+          <li><a href="#team">Our Doctors</a></li>
+          <li><a href="#technology">Technology</a></li>
+          <li><a href="#testimonials">Patients</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <div className="lang-switcher">
+            <span>LV</span><span style={{ opacity: 0.3 }}>/</span>
+            <span>RU</span><span style={{ opacity: 0.3 }}>/</span>
+            <span className="active">EN</span>
+          </div>
+          <a href="#contact" className="nav-cta">Book Consultation</a>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section className="hero">
+        <div className="hero-left">
+          <div className="hero-eyebrow fade-in">Premier Dental Clinic · Riga, Latvia</div>
+          <h1 className="hero-h1 fade-in fade-in-delay-1">
+            Your Smile,<br /><em>Crafted</em><br />to Perfection
+          </h1>
+          <p className="hero-sub fade-in fade-in-delay-2">
+            Exceptional dentistry delivered with European precision and genuine care. From routine hygiene to complete smile transformations — experience a new standard.
+          </p>
+          <div className="hero-ctas fade-in fade-in-delay-3">
+            <a href="#contact" className="btn-primary">Book a Consultation</a>
+            <a href="#services" className="btn-ghost">Explore Services</a>
+          </div>
+          <div className="hero-stats fade-in fade-in-delay-4">
+            <div>
+              <div className="hero-stat-num">100+</div>
+              <div className="hero-stat-label">Patients Treated</div>
+            </div>
+            <div>
+              <div className="hero-stat-num">3+</div>
+              <div className="hero-stat-label">Years of Excellence</div>
+            </div>
+            <div>
+              <div className="hero-stat-num">5★</div>
+              <div className="hero-stat-label">Patient Rating</div>
+            </div>
+          </div>
+        </div>
+        <div className="hero-right">
+          <img
+            src="https://migdent.lv/_next/image?url=%2Fimg_12.png&w=3840&q=75"
+            alt="Migdent clinic interior"
+          />
+          <div className="hero-right-overlay"></div>
+          <div className="hero-badge">
+            <div className="hero-badge-title">Located in Central Riga</div>
+            <div className="hero-badge-text">Lāčplēša iela 59</div>
+          </div>
+        </div>
+      </section>
+
+      {/* TRUST BAR */}
+      <div className="trust-bar">
+        {[
+          { icon: "◎", num: "3+", label: "Years Experience" },
+          { icon: "◉", num: "100+", label: "Happy Patients" },
+          { icon: "◈", num: "5★", label: "Patient Rating" },
+          { icon: "◯", num: "Latest", label: "Digital Equipment" },
+          { icon: "◫", num: "3", label: "Languages Spoken" },
+        ].map((item, i) => (
+          <>
+            <div className="trust-item" key={i}>
+              <div className="trust-item-icon">{item.icon}</div>
+              <div>
+                <div className="trust-item-num">{item.num}</div>
+                <div className="trust-item-label">{item.label}</div>
+              </div>
+            </div>
+            {i < 4 && <div className="trust-divider" key={`d${i}`}></div>}
+          </>
+        ))}
+      </div>
+
+      {/* WHY US */}
+      <section className="section why-us" id="about">
+        <div className="why-grid">
+          <div className="why-image-wrap fade-in">
+            <img
+              src="https://migdent.lv/_next/image?url=%2Fimg_14.png&w=3840&q=75"
+              alt="Advanced dental diagnostics at Migdent"
+            />
+            <div className="why-image-accent"></div>
+          </div>
+          <div>
+            <div className="section-eyebrow fade-in">Why Choose Migdent</div>
+            <h2 className="section-h2 fade-in fade-in-delay-1">
+              Dentistry Where<br />Detail Matters
+            </h2>
+            <div className="why-items" style={{ marginTop: 40 }}>
+              {[
+                { title: "Advanced Diagnostics", text: "Digital imaging and 3D cone beam CT scanning allows us to see what others miss — enabling precise diagnoses and optimal treatment planning from day one." },
+                { title: "A Genuinely Personal Approach", text: "We take time. Every consultation is unhurried. Every treatment plan is designed for you specifically — not adapted from a standard template." },
+                { title: "Comfort as Standard", text: "Modern anaesthesia, warm interiors, and a calm atmosphere ensure every visit is as comfortable as it is clinically excellent." },
+                { title: "Transparent Pricing", text: "No surprises. Before any treatment begins, you receive a clear, itemised plan with full pricing. You decide — on your terms." },
+              ].map((item, i) => (
+                <div className={`why-item fade-in fade-in-delay-${i + 1}`} key={i}>
+                  <div className="why-num">0{i + 1}</div>
+                  <div>
+                    <div className="why-item-title">{item.title}</div>
+                    <div className="why-item-text">{item.text}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SERVICES */}
+      <section className="section services" id="services">
+        <div className="services-header">
+          <div>
+            <div className="section-eyebrow fade-in">Our Services</div>
+            <h2 className="section-h2 fade-in fade-in-delay-1">Treatments That<br />Transform</h2>
+          </div>
+          <a href="#contact" className="btn-ghost fade-in">View All Treatments →</a>
+        </div>
+        <div className="services-grid">
+          {services.map((s, i) => (
+            <div className={`service-card fade-in fade-in-delay-${(i % 3) + 1}`} key={i}>
+              <div className="service-num">{s.num}</div>
+              <div className="service-title">{s.title}</div>
+              <div className="service-text">{s.text}</div>
+              <div className="service-arrow">→</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* BEFORE/AFTER */}
+      <section className="ba-section" id="results">
+        <div className="section-eyebrow fade-in">Patient Results</div>
+        <h2 className="section-h2 fade-in fade-in-delay-1">Real Smiles,<br />Real Transformations</h2>
+        <p className="section-sub fade-in fade-in-delay-2">
+          Every smile is unique. These are just a few of the results our patients have trusted us to deliver.
+        </p>
+        <div className="ba-cards">
+          {[
+            { tag: "Porcelain Veneers", label: "Complete Smile\nMakeover", img: "https://migdent.lv/_next/image?url=%2Fimg_15.png&w=3840&q=75" },
+            { tag: "Dental Implants", label: "Full Arch\nRestoration", img: "https://migdent.lv/_next/image?url=%2Fimg_14.png&w=3840&q=75" },
+            { tag: "Teeth Whitening", label: "Professional\nWhitening", img: "https://migdent.lv/_next/image?url=%2Fimg_12.png&w=3840&q=75" },
+          ].map((c, i) => (
+            <div className={`ba-card fade-in fade-in-delay-${i + 1}`} key={i}>
+              <img src={c.img} alt={c.label} />
+              <div className="ba-overlay">
+                <div className="ba-tag">{c.tag}</div>
+                <div className="ba-label" style={{ whiteSpace: "pre-line" }}>{c.label}</div>
+                <div className="ba-slider-label">Before & After →</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* TEAM */}
+      <section className="section team" id="team">
+        <div className="section-eyebrow fade-in">Meet The Team</div>
+        <h2 className="section-h2 fade-in fade-in-delay-1">The Hands Behind<br />Your Smile</h2>
+        <p className="section-sub fade-in fade-in-delay-2">
+          Qualified, experienced, and genuinely passionate. Our doctors combine clinical excellence with warmth that makes every visit different.
+        </p>
+        <div className="team-grid">
+          {[
+            { name: "Dr. Sofija", role: "Lead Dentist & Cosmetologist", bio: "Specialising in aesthetic dentistry and smile design, Dr. Sofija combines technical mastery with an artist's eye for detail. Her patients describe her as precise, kind, and genuinely transformative." },
+            { name: "Dr. Mikhail", role: "Implantologist & Oral Surgeon", bio: "With advanced training in implantology and surgical procedures, Dr. Mikhail brings confidence and calm to complex cases. A trusted name among patients seeking permanent restorations." },
+            { name: "Dr. Anna", role: "Orthodontist & Preventive Specialist", bio: "Focused on long-term dental health, Dr. Anna guides patients through alignment treatments and preventive care protocols with clarity and compassion." },
+          ].map((doc, i) => (
+            <div className={`doctor-card fade-in fade-in-delay-${i + 1}`} key={i}>
+              <div className="doctor-img-wrap">
+                <img
+                  src={`https://migdent.lv/_next/image?url=%2Fimg_1${4 + i}.png&w=3840&q=75`}
+                  alt={doc.name}
+                  onError={e => { e.target.src = "https://migdent.lv/_next/image?url=%2Fimg_14.png&w=3840&q=75"; }}
+                />
+                <div className="doctor-gold-accent"></div>
+              </div>
+              <div className="doctor-name">{doc.name}</div>
+              <div className="doctor-role">{doc.role}</div>
+              <div className="doctor-bio">{doc.bio}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* JOURNEY */}
+      <section className="section journey">
+        <div style={{ textAlign: "center" }}>
+          <div className="section-eyebrow fade-in" style={{ justifyContent: "center" }}>
+            <span style={{ width: 32, height: 1, background: "#B8965A", display: "inline-block" }}></span>
+            Your Patient Journey
+          </div>
+          <h2 className="section-h2 fade-in fade-in-delay-1">From First Contact<br />to Lasting Results</h2>
+        </div>
+        <div className="journey-steps">
+          {journeySteps.map((step, i) => (
+            <div className={`journey-step fade-in fade-in-delay-${i + 1}`} key={i}>
+              <div className="step-circle">{step.num}</div>
+              <div className="step-title">{step.title}</div>
+              <div className="step-text">{step.text}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* TECHNOLOGY */}
+      <section className="technology" id="technology">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, alignItems: "end", marginBottom: 0 }}>
+          <div>
+            <div className="section-eyebrow fade-in" style={{ color: "#B8965A" }}>
+              <span style={{ width: 32, height: 1, background: "#B8965A", display: "inline-block" }}></span>
+              Advanced Technology
+            </div>
+            <h2 className="section-h2 fade-in fade-in-delay-1">Where Precision<br />Meets Innovation</h2>
+          </div>
+          <p className="section-sub fade-in fade-in-delay-2" style={{ color: "rgba(255,255,255,0.45)", margin: 0 }}>
+            We invest continuously in the latest diagnostic and treatment technology — not to impress, but because our patients deserve the most accurate, comfortable, and effective care available.
+          </p>
+        </div>
+        <div className="tech-grid" style={{ marginTop: 56 }}>
+          {techItems.map((t, i) => (
+            <div className={`tech-item fade-in fade-in-delay-${i + 1}`} key={i}>
+              <div className="tech-icon">{t.icon}</div>
+              <div className="tech-title">{t.title}</div>
+              <div className="tech-text">{t.text}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="section testimonials" id="testimonials">
+        <div className="section-eyebrow fade-in">Patient Stories</div>
+        <h2 className="section-h2 fade-in fade-in-delay-1">Heard From<br />Those Who Know</h2>
+        <div className="testimonials-grid">
+          {testimonials.map((t, i) => (
+            <div className={`testimonial-card fade-in fade-in-delay-${(i % 2) + 1}`} key={i}>
+              <div className="testimonial-quote-icon">"</div>
+              <div className="testimonial-stars">★★★★★</div>
+              <div className="testimonial-text">"{t.text}"</div>
+              <div className="testimonial-author">
+                <div className="author-avatar">{t.initials}</div>
+                <div>
+                  <div className="author-name">{t.author}</div>
+                  <div className="author-since">{t.since}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section className="section pricing">
+        <div style={{ textAlign: "center" }}>
+          <div className="section-eyebrow fade-in" style={{ justifyContent: "center" }}>
+            <span style={{ width: 32, height: 1, background: "#B8965A", display: "inline-block" }}></span>
+            Transparent Pricing
+          </div>
+          <h2 className="section-h2 fade-in fade-in-delay-1">Investment in Your Smile</h2>
+          <p className="section-sub fade-in fade-in-delay-2" style={{ margin: "16px auto 0", textAlign: "center" }}>
+            Honest, transparent pricing from the very first consultation. No surprises, ever.
+          </p>
+        </div>
+        <div className="pricing-cards">
+          {[
+            {
+              service: "Preventive Care",
+              name: "Professional Hygiene",
+              from: "Starting from",
+              price: "€45",
+              features: ["Full examination", "Digital X-ray", "Ultrasonic cleaning", "Polishing", "Oral hygiene coaching"],
+            },
+            {
+              service: "Cosmetic Dentistry",
+              name: "Porcelain Veneers",
+              from: "Per veneer from",
+              price: "€350",
+              features: ["Digital smile design", "Shade consultation", "Ceramic fabrication", "Precision bonding", "Follow-up adjustment"],
+              featured: true,
+            },
+            {
+              service: "Implantology",
+              name: "Single Implant",
+              from: "Complete treatment from",
+              price: "€900",
+              features: ["3D CT planning", "Titanium implant", "Healing supervision", "Crown fabrication", "5-year guarantee"],
+            },
+          ].map((p, i) => (
+            <div className={`pricing-card ${p.featured ? "featured" : ""} fade-in fade-in-delay-${i + 1}`} key={i}>
+              {p.featured && <div className="pricing-badge">Most Popular</div>}
+              <div className="pricing-service">{p.service}</div>
+              <div className="pricing-name">{p.name}</div>
+              <div className="pricing-from">{p.from}</div>
+              <div className="pricing-price">{p.price}</div>
+              <ul className="pricing-features">
+                {p.features.map((f, j) => <li key={j}>{f}</li>)}
+              </ul>
+              <a href="#contact" className="btn-primary" style={{ width: "100%", textAlign: "center", display: "block", background: p.featured ? "#B8965A" : undefined }}>
+                Get a Quote
+              </a>
+            </div>
+          ))}
+        </div>
+        <p style={{ textAlign: "center", marginTop: 32, fontSize: 12, color: "#6B6560", letterSpacing: "0.05em" }}>
+          All prices are indicative. A precise quote is provided following your consultation. Financing options available.
+        </p>
+      </section>
+
+      {/* CTA / CONTACT */}
+      <section className="cta-final" id="contact">
+        <div>
+          <div className="section-eyebrow fade-in">Get in Touch</div>
+          <h2 className="section-h2 fade-in fade-in-delay-1">
+            Begin Your<br /><em style={{ fontFamily: "'Playfair Display', serif", fontStyle: "italic", color: "#B8965A" }}>Smile Journey</em><br />Today
+          </h2>
+          <p className="section-sub fade-in fade-in-delay-2">
+            We'd love to meet you. Book a consultation and let us show you what's possible — with no obligation, no pressure, just a genuine conversation about your smile.
+          </p>
+          <div className="contact-info fade-in fade-in-delay-3">
+            {[
+              { icon: "◎", label: "Address", value: "Lāčplēša iela 59, Riga, LV-1011", href: "https://maps.app.goo.gl/zkY7fWJ9pCpjjcZe7" },
+              { icon: "◉", label: "Phone", value: "(+371) 220-220-77", href: "tel:+37122022077" },
+              { icon: "◈", label: "Email", value: "migdentlv@gmail.com", href: "mailto:migdentlv@gmail.com" },
+            ].map((c, i) => (
+              <div className="contact-item" key={i}>
+                <div className="contact-icon">{c.icon}</div>
+                <div>
+                  <div className="contact-label">{c.label}</div>
+                  <a href={c.href} className="contact-value">{c.value}</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="contact-form-wrap fade-in fade-in-delay-2">
+          {submitted ? (
+            <div style={{ textAlign: "center", padding: "48px 0" }}>
+              <div style={{ fontSize: 40, color: "#B8965A", marginBottom: 16 }}>◎</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, color: "#1A1A1A", marginBottom: 12 }}>Thank You</div>
+              <p style={{ fontSize: 14, color: "#6B6560", lineHeight: 1.7 }}>
+                Your consultation request has been received.<br />We will contact you within 24 hours.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="form-title">Book a Consultation</div>
+              <form onSubmit={handleSubmit}>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input className="form-input" placeholder="Your name" required
+                      value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Phone</label>
+                    <input className="form-input" placeholder="+371 …" type="tel" required
+                      value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email Address</label>
+                  <input className="form-input" placeholder="your@email.com" type="email" required
+                    value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Preferred Date</label>
+                  <input className="form-input" type="date"
+                    value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Tell Us About Your Smile Goals</label>
+                  <textarea className="form-input" rows={3} placeholder="Optional — describe what you'd like to improve or achieve…"
+                    style={{ resize: "vertical" }}
+                    value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} />
+                </div>
+                <button type="submit" className="form-submit">Request Consultation →</button>
+                <p style={{ fontSize: 11, color: "#9a9390", textAlign: "center", marginTop: 12, letterSpacing: "0.04em" }}>
+                  By submitting, you agree to our Privacy Policy
+                </p>
+              </form>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="footer">
+        <div className="footer-top">
+          <div>
+            <div className="footer-logo"><span></span>Migdent</div>
+            <p className="footer-tagline">
+              A premium dental clinic in the heart of Riga. Where clinical excellence meets genuine care.
+            </p>
+          </div>
+          <div>
+            <div className="footer-col-title">Services</div>
+            <ul className="footer-links">
+              {["Dental Implants", "Porcelain Veneers", "Smile Makeover", "Teeth Whitening", "Orthodontics", "Hygiene"].map(s => (
+                <li key={s}><a href="#services">{s}</a></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <div className="footer-col-title">Clinic</div>
+            <ul className="footer-links">
+              {["About Us", "Our Doctors", "Technology", "Patient Stories", "Blog", "Careers"].map(l => (
+                <li key={l}><a href="#">{l}</a></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <div className="footer-col-title">Visit Us</div>
+            <ul className="footer-links">
+              <li><a href="https://maps.app.goo.gl/zkY7fWJ9pCpjjcZe7">Lāčplēša iela 59,<br />Riga, LV-1011</a></li>
+              <li style={{ marginTop: 8 }}><a href="tel:+37122022077">(+371) 220-220-77</a></li>
+              <li><a href="mailto:migdentlv@gmail.com">migdentlv@gmail.com</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <div className="footer-copy">© 2026 Migdent. All rights reserved. · <a href="#" style={{ color: "rgba(255,255,255,0.25)", textDecoration: "none" }}>Privacy Policy</a></div>
+          <div className="footer-socials">
+            <a href="https://www.instagram.com/migdent_lv/" className="social-link">✦</a>
+            <a href="https://www.facebook.com/people/Zob%C4%81rstniec%C4%ABba-MigDent/61550984601225/" className="social-link">f</a>
+          </div>
+        </div>
+      </footer>
+
+      {/* MOBILE STICKY BUTTONS */}
+      <div className="mobile-sticky" style={{ display: "grid" }}>
+        <a href="tel:+37122022077" className="sticky-btn sticky-call">📞 Call Now</a>
+        <a href="#contact" className="sticky-btn sticky-book">Book Free Consult</a>
+      </div>
+    </>
+  );
+}
